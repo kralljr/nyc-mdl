@@ -104,18 +104,29 @@ apca.all <- function(datlist, tot, nf = 8) {
 	
 	apcares <- vector(mode = "list", length = 4)
 	for(i in 1:3) {
-		dat1 <- datlist[[i]][, -1]
-		tots <- datlist[[i]][, 1]
+		if(tot == T) {
+			dat1 <- datlist[[i]][, -1]
+			tots <- datlist[[i]][, 1]
+		}else{
+			dat1 <- datlist[[i]]
+			tots <- rowSums(dat1)
+			}
 		apcares[[i]] <- abspca(dat = dat1, tot= tots, nfactors = nf)
 	}
 	
 	
 	apcares[[4]] <- vector(mode = "list", length = dim(datlist[[4]])[3])
 	for(i in 1 : dim(datlist[[4]])[3]) {
-		dat1 <- datlist[[4]][, -1, i]
-		tots <- datlist[[4]][, 1, i ]
-		apcares[[4]][[i]] <- abspca(dat = dat1, tot = tots, nfactors = nf)
-                }
+		if(tot == T) {
+			dat1 <- datlist[[4]][, -1, i]
+			tots <- datlist[[1]][, 1]
+		}else{
+			dat1 <- datlist[[4]][, , i]
+			tots <- rowSums(dat1)
+			}
+		apcares[[4]][[i]] <- abspca(dat = dat1, 
+			tot = tots, nfactors = nf)
+		}
 	
 	names(apcares) <- c("dat", "dat5", "datdrop", "gibbs")
 	apcares
@@ -329,7 +340,7 @@ match.sources <- function(saresults, report, type, ncol1 = NULL,
 ###
 # principal loadings
 pr.load <- function(data, nfactors) {
-	datasc <- stdize(data, sd = 1)
+	datasc <- stdize1(data, sd = 1)
 
 	pc1 <- principal(datasc, nfactors, scores = TRUE, rotate = "varimax")
 	pc1
