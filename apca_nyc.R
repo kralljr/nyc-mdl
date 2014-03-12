@@ -1,14 +1,36 @@
-# File to provide summary, APCA SA results of  QCIImonitor in NYC
+# File to provide summary, APCA source apportionment
+# results of  QCII speciation monitor in NYC
 # 8/20/13
 # ========================================================
 
 
 
-
+#load libraries
 library(ncdf4)
+library(psych)
 
 
-#Obtain adjusted data
+#get data
+dat <- read.csv("http://biostat.jhsph.edu/~jkrall/nycdat.csv", stringsAsFactors = F)
+mdlsboth <- read.csv("http://biostat.jhsph.edu/~jkrall/mdls.csv", stringsAsFactors = F)
+mdlmax <- as.numeric(mdlsboth[1, ])
+names(mdlmax) <- colnames(mdlsboth)
+mdlmin <- as.numeric(mdlsboth[2, ])
+names(mdlmin) <- colnames(mdlsboth)
+dat[, 1] <- as.Date(dat[, 1])
+
+
+
+
+
+
+
+
+
+
+
+
+#Obtain adjusted data by applying censoring adjustment methods
 ################################
 ################################
 ################################
@@ -16,27 +38,34 @@ library(ncdf4)
 ################################
 ################################
 
+
+#get matrix of mdls
+mdls <- matrix(rep(mdlmax, each = nrow(dat)), 
+	ncol = length(mdlmax), byrow = F)
+colnames(mdls) <- colnames(mdlsboth)	
 
 #summary of bdl values
-bqcii <- bdlfun(dat, mdlmax)
+sort(round(bdlfun(dat, mdlmax)[[2]], 2))
 
 
 # ####
 # # Get adjusted data for NYC
+# Reported
+# 1/2 MDL
+# Exclude
 dataNYC <- createDATs(dat, mdlmax)
+
+
+#run MCMC, get likelihood-based adjusted data
 set.seed(1597)
-#create matrix of mdls
-mdls <- matrix(rep(mdlmax, each = nrow(dat)), 
-	ncol = length(mdlmax), byrow = F)
-#run MCMC
-datmcmc <- runGIBBS(dat[, -1], mdls, niter = 50000, 
-      burnin = 25000, ndraws = 100, seed = 2361)
+#do not use PM2.5
+datmcmc <- runGIBBS(dat[, -c(1, 2)], mdls[, -1], niter = 50000, 
+      burnin = 25000, ndraws = 10, seed = 2361)
 dataNYC[[4]] <- datmcmc
 names(dataNYC)[4] <- "gibbs" 
 
 
 
-# save(dataNYC, mdlmat, file = file.path(newcode.dir, "dataNYC_20aug13.RData"))
 # #################################
 # #################################
 # #################################
@@ -55,14 +84,7 @@ names(dataNYC)[4] <- "gibbs"
 
 
 
-
-
-
-
-
-
-datNYCold <- dataNYC
-dataNYC <- datNYCold
+# # APPLY APCA to each
 ################################
 ################################
 ################################
@@ -70,12 +92,25 @@ dataNYC <- datNYCold
 ################################
 ################################
 ####
-# # APPLY APCA to each
+
+
+#remove dates
+dataNYCnodate <- dataNYC
+for(i in 1 : 3) {
+	dataNYCnodate[[i]] <- dataNYCnodate[[i]][, -1]
+}
 set.seed(99466)
-#only use first 10 for gibbs
-# dataNYC[[4]] <- dataNYC[[4]][, , c(1 : 10)]
-apca.nyc <- apca.all(dataNYC, tot = T)
-# save(apca.nyc, file = "apca_nyc_16aug13.RData")
+apca.nyc <- apca.all(dataNYCnodate, tot = T)
+
+
+#try without total
+datT <- dataNYCnodate
+for(i in 1 : 3) {
+	datT[[i]] <- datT[[i]][, -1]
+}
+datT[[4]] <- datT[[4]][, -1, ]
+set.seed(99466)
+apca.nyc.nopm <- apca.all(datT, tot = F)
 
 
 
@@ -92,15 +127,46 @@ apca.nyc <- apca.all(dataNYC, tot = T)
 # ######
 # #match results to each other
 # #fix reported
+#new
+source.conc <- apca.nyc[[1]][[1]][, c(2, 3, 8, 1)]
+source.prof <- apca.nyc[[1]][[4]][, c(2, 3, 8, 1)]
+source.conc.all <- match.sources(apca.nyc, source.conc, "scores")
+source.prof.all <- match.sources(apca.nyc, source.prof, "prof")
+
+
+#1/2MDL and exclude
+#5321
+#4321
+
+
+
+
+
+#no PM
+source.conc <- apca.nyc.nopm[[1]][[1]][, c(2, 3, 8, 1)]
+source.prof <- apca.nyc.nopm[[1]][[4]][, c(2, 3, 8, 1)]
+source.conc.all <- match.sources(apca.nyc.nopm, source.conc, "scores")
+source.prof.all <- match.sources(apca.nyc.nopm, source.prof, "prof")
+
+
+
+
+#note, in old principal function, reordered after selecting sources
+
+
+########
+#old
 source.conc <- apca.nyc[[1]][[1]][, c(3, 2, 4, 1)]
 source.prof <- apca.nyc[[1]][[4]][, c(3, 2, 4, 1)]
 source.conc.all <- match.sources(apca.nyc, source.conc, "scores", holds = c(6, 7))
 source.prof.all <- match.sources(apca.nyc, source.prof, "prof", holds = c(6, 7))
 
 
+
+
 # ## DOUBLE CHECK
 matchmat <- matrix(nrow = 13, ncol = 4)
-pr.load(dataNYC[[1]][, -1], 8)
+pr.load(dataNYC[[1]][, -c(1, 2)], 8)
 matchmat[1, ] <- c(3, 2, 4, 1)
 pr.load(dataNYC[[2]][, -1], 8)
 matchmat[2, ] <- c(2, 3, 4, 1)
