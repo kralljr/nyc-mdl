@@ -18,12 +18,9 @@
 
 
 home.dir <- "/Users/jennakrall/Dropbox/MDL_sourceapp/nyc_analysis_mdl"
+datdir2 <- "/Users/jennakrall/Dropbox/SpatialFA/data/"
+setwd(home.dir)
 
-
-dat <- read.csv(file.path(home.dir, "SpeciationDB_2009_01_06wBlk_csv.csv"), fill = T, 
-	stringsAsFactors = F)
-spec <- readRDS("/Users/jennakrall/Dropbox/SpatialFA/data/speciation_monitors.rds")
-	
 	
 	
 	
@@ -32,6 +29,10 @@ spec <- readRDS("/Users/jennakrall/Dropbox/SpatialFA/data/speciation_monitors.rd
 # Clean NYC speciation data
 ####	
 #keep rows for QC
+dat <- read.csv(file.path(home.dir, "SpeciationDB_2009_01_06wBlk_csv.csv"), fill = T, 
+	stringsAsFactors = F)
+	
+	
 WC <- which(dat[, 2] == "QCII")
 dat <- dat[c(1, 2, WC), ]
 
@@ -67,13 +68,15 @@ cols2 <- c("Aluminum", "Arsenic", "Bromine", "Calcium", "Chlorine",
 	"Nickel", "Nitrate", "Phosphorus", "Lead", "Selenium",
 	"Silicon", "Strontium", "Titanium", "Vanadium", 
 	"Zinc", "Elemental",  "Organic" )
-other <- "Date"
+other <- c("Date", "PM25")
 dat <- dat[, which(saps1 %in% c(cols, cols2) | saps2 %in% other)]
 
 colnames(dat)[1] <- "Date"
+saps1 <- sapply(strsplit(colnames(dat), " "), function(x) x[1])
 saps2 <- sapply(strsplit(colnames(dat), " "), function(x) x[2])
 dat <- dat[, -which(saps2 %in% c("Date", "Analysis"))]
 dat <- dat[, -which(colnames(dat) %in% c("Potassium ( K+ )", "Sodium ( Na+ )"))]
+dat <- dat[, -which(saps1 %in% c("Collocated", "Official"))]
 
 
 #concentrations are numeric
@@ -90,8 +93,8 @@ colnames(dat) <- tolower(sapply(strsplit(colnames(dat), " "), function(x) x[1]))
 colnames(dat)[which(colnames(dat) == "organic")] <- "OC"
 colnames(dat)[which(colnames(dat) == "elemental")] <- "elemental_carbon"
 colnames(dat)[which(colnames(dat) == "ammonium")] <- "ammonium_ion"
-dat <- data.frame(dat[, 1], dat[,  sort(colnames(dat)[-1])])
-colnames(dat)[1] <- "Date"
+dat <- data.frame(dat[, c(1, 2)], dat[,  sort(colnames(dat)[-c(1, 2)])])
+colnames(dat)[1:2] <- c("Date", "PM25")
 
 
 
@@ -110,6 +113,7 @@ write.csv(dat, file = "nycdat.csv", row.names = F)
 # get CSN/MDL data
 #####
 
+spec <- readRDS(file.path(datdir2, "speciation_monitors.rds"))
 
 airs1 <- paste0(substr(airs, 1, 5), ".", substr(airs, 6, 9))
 spec <- spec[[which(names(spec) == airs1)]]
@@ -128,24 +132,39 @@ colnames(mdl) <- sapply(strsplit(colnames(mdl), "\\."), function(x) x[1])
 colnames(mdl)[1] <- "Date"
 specdat <- spec1[, which(is.na(saps2))]
 
-colsspec <- tolower(c(cols, cols2))
+
+#fix column names
+colsspec <- c(tolower(c(cols, cols2)), "PM25_SPEC")
 colsspec[which(colsspec == "ammonium")] <- "ammonium_ion"
 colsspec[which(colsspec == "elemental")] <- "elemental_carbon"
 colsspec[which(colsspec == "organic")] <- "OC" 
 # colsspec[which(colsspec == "organic")] <- "OCM_K14"  #no non-missing MDLs
 
 
+#fix order of columns, fix column names
 specdat <- specdat[, c(1, which(colnames(specdat) %in% colsspec))]
+pm25 <- specdat$PM25_SPEC
+specdat <- specdat[, -which(colnames(specdat) == "PM25_SPEC")]
+specdat <- data.frame(specdat[, 1], pm25, specdat[, sort(colnames(specdat)[-1])])
+colnames(specdat)[1:2] <- c("Date", "PM25")
+
+
+#fix MDLS
 mdl <- mdl[, c(1, which(colnames(mdl) %in% colsspec))]
 specdat <- specdat[complete.cases(specdat), ]
 mdl <- mdl[complete.cases(mdl), ]
 mdl <- mdl[, -1]
-mdl <- mdl[, sort(colnames(mdl))]
+pm25 <- mdl$PM25_SPEC
+mdl <- mdl[, -which(colnames(mdl) == "PM25_SPEC")]
+mdl <- data.frame(pm25, mdl[, sort(colnames(mdl))])
+colnames(mdl)[1] <- "PM25"
 mdlmax <- apply(mdl, 2, max)
 mdlmin <- apply(mdl, 2, min)
 
 
-write.csv(mdlmax, file = "mdlmax.csv", row.names = F)
+mdls <- rbind(mdlmax, mdlmin)
+
+write.csv(mdls, file = "mdls.csv", row.names = F)
 
 
 
@@ -166,25 +185,17 @@ dates <- c(dat[, 1], specdat[, 1])
 dates <- unique(dates[which(duplicated(dates))])
 
 datmatch <- dat[which(dat[, 1] %in% dates), ]
-colnames(datmatch) <- tolower(sapply(strsplit(colnames(datmatch), " "), function(x) x[1]))
-colnames(datmatch)[which(colnames(datmatch) == "organic")] <- "OC"
-colnames(datmatch)[which(colnames(datmatch) == "elemental")] <- "elemental_carbon"
-colnames(datmatch)[which(colnames(datmatch) == "ammonium")] <- "ammonium_ion"
-colnames(datmatch)[1] <- "Date"
 specmatch <- specdat[which(specdat[, 1] %in% dates), ]
 
 all.equal(sort(colnames(datmatch)), sort(colnames(specmatch)))
 
 datmatch <- datmatch[, -1]
 specmatch <- specmatch[, -1]
-datmatch <- datmatch[, sort(colnames(datmatch))]
-specmatch <- specmatch[, sort(colnames(specmatch))]
-
 all.equal(trunc(datmatch, 2), trunc(specmatch, 2))
 
 
 #organic carbon, EC, similar, but not same
- cor(datmatch[, 20], specmatch[, 20])
-# [1] 0.9990474
-cor(datmatch[, 12], specmatch[, 12])
-# [1] 0.9855286
+ cor(datmatch$elemental_carbon, specmatch$elemental_carbon)
+# [1] 0.9852339
+cor(datmatch$OC, specmatch$OC)
+# [1] 0.9990565
