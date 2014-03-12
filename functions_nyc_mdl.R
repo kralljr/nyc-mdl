@@ -340,7 +340,7 @@ match.sources <- function(saresults, report, type, ncol1 = NULL,
 ###
 # principal loadings
 pr.load <- function(data, nfactors) {
-	datasc <- stdize1(data, sd = 1)
+	datasc <- stdize1(data)[[1]]
 
 	pc1 <- principal(datasc, nfactors, scores = TRUE, rotate = "varimax")
 	pc1
