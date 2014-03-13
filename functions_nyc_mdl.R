@@ -118,7 +118,7 @@ apca.all <- function(datlist, tot, nf = 8) {
 	apcares[[4]] <- vector(mode = "list", length = dim(datlist[[4]])[3])
 	for(i in 1 : dim(datlist[[4]])[3]) {
 		if(tot == T) {
-			dat1 <- datlist[[4]][, -1, i]
+			dat1 <- datlist[[4]][,, i]
 			tots <- datlist[[1]][, 1]
 		}else{
 			dat1 <- datlist[[4]][, , i]
@@ -256,6 +256,7 @@ find.top.mtch <- function(sares1, sares2, type, holds = 0) {
 	
 	if(type == "scores") {
 		cormat <- cor(sares1, sares2)
+		print(round(cormat, 2))
 		for(i in 1 : nrow(cormat)) {
 			match[i] <- which.max(cormat[i, ])
 		}
@@ -270,10 +271,12 @@ find.top.mtch <- function(sares1, sares2, type, holds = 0) {
 		dista <- dist(t(cbind(sares1, sares2)))
 		ncol1 <- ncol(sares1)
 		ncol2 <- ncol(sares2)
-		dista <- as.matrix(dista)[1 : ncol1, (ncol1 + 1) : (ncol1 + ncol2)]
+		dista <- as.matrix(dista)[1 : ncol1, 
+			(ncol1 + 1) : (ncol1 + ncol2)]
 		for(i in 1 : nrow(dista)) {
 			match[i] <- which.min(dista[i, ])
 		}
+		print(round(dista, 2))
 		compare <- dista
 	}	
 	
@@ -311,7 +314,8 @@ match.sources <- function(saresults, report, type, ncol1 = NULL,
 	for(i in 2 : 3) {
 
 		ncol1 <- ncol(scores[[i]])
-		mtch <- find.top.mtch(report, scores[[i]][, 1 : ncol1], type = type)
+		mtch <- find.top.mtch(report, scores[[i]][, 1 : ncol1], 
+			type = type)
 		matchmat[i, ] <- mtch
 	}
 	
@@ -341,9 +345,15 @@ match.sources <- function(saresults, report, type, ncol1 = NULL,
 # principal loadings
 pr.load <- function(data, nfactors) {
 	datasc <- stdize1(data)[[1]]
-
-	pc1 <- principal(datasc, nfactors, scores = TRUE, rotate = "varimax")
-	pc1
+	#perform PCA
+	pc1 <- prcomp(datasc)
+	#get eigenvectors scaled by sdev
+	rots <- sweep(pc1$rot, 2, pc1$sdev, "*")
+	
+	#apply varimax rotation
+	vmax1 <- varimax(rots[, 1 : nfactors], normalize = T)
+	bstar1 <- as.matrix(vmax1[[1]][1 : ncol(datasc), ])
+	bstar1
 }
 
 
