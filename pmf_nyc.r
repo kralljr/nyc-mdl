@@ -9,6 +9,7 @@
 library(xtable)
 library(ggplot2)
 library(scales)
+library(gridExtra)
 
 #get data
 dat <- read.csv("http://biostat.jhsph.edu/~jkrall/nycdat.csv", stringsAsFactors = F)
@@ -118,9 +119,9 @@ source.prof.all <- match.sources(pmf.nyc, profpmf,
 	 "prof", typeSA = "PMF", cn = cn)
 
 for(i in 2 : 3) {
-	temp <- pmf.nyc[[i]][[2]][-1, ]
+	temp <- pmf.nyc[[i]][[2]]
 	rownames(temp) <- colnames(dataNYCPMF[[i]])[-1]
-	print(round(temp, 3))
+	print(round(temp[cn2, ], 3))
 }
 
 cn2 <- c("aluminum", "calcium", "titanium", "silicon", "ammonium_ion",
@@ -128,26 +129,26 @@ cn2 <- c("aluminum", "calcium", "titanium", "silicon", "ammonium_ion",
 	"nickel", "nitrate", "vanadium", "zinc")
 for(i in 1 : 10) {
 	print(i)
-	temp <- pmf.nyc[[4]][[i]][[2]][-1, ]
+	temp <- pmf.nyc[[4]][[i]][[2]]
 	rownames(temp) <- colnames(dataNYCPMF[[4]][[1]])[-1]
 	print(round(temp[cn2, ], 3))
 }
 
 
 matchmat <- matrix(nrow = 13, ncol = 4)
-matchmat[1, ] <- c(1, 2, 3, 4)
-matchmat[2, ] <- c(6, 2, 3, 4)
-matchmat[3, ] <- c(7, 4, 6, 3)
-matchmat[4, ] <- c(6, 4, 5, 1)
-matchmat[5, ] <- c(1, 2, 3, 8)
-matchmat[6, ] <- c(6, 4, 3, 8)
-matchmat[7, ] <- c(1, 4, 3, 8)
-matchmat[8, ] <- c(1, 2, 4, 5)
-matchmat[9, ] <- c(6, 2, 4, 8)
-matchmat[10, ] <- c(6, 4, 3, 8)
-matchmat[11, ] <- c(6, 4, 3, 5)
-matchmat[12, ] <- c(3, 6, 5, 8)
-matchmat[13, ] <- c(6, 4, 3, 8)
+matchmat[1, ] <- sw
+matchmat[2, ] <- c(1, 8, 5, 2)
+matchmat[3, ] <- c(8, 1, 6, 4)
+matchmat[4, ] <- c(4, 8, 1, 7)
+matchmat[5, ] <- c(4, 8, 1, 5)
+matchmat[6, ] <- c(4, 8, 1, 5)
+matchmat[7, ] <- c(4, 8, 5, 1)
+matchmat[8, ] <- c(4, 8, 1, 6)
+matchmat[9, ] <- c(4, 8, 5, 1)
+matchmat[10, ] <- c(4, 8, 1, 5)
+matchmat[11, ] <- c(4, 8, 1, 5)
+matchmat[12, ] <- c(4, 8, 5, 1)
+matchmat[13, ] <- c(4, 8, 1, 5)
 
 
 
@@ -177,9 +178,10 @@ atseqs <- dateN[seqs1]
 n  <- length(dateN)
 
 #create dataset
-sc <- 0
+sc <- c(0, 0)
 t1 <- c("", "")
-sc2 <- c(0, 0)
+sc2 <- c(0, 0, 0)
+maxs <- c(10, 10, 10, 30)
 t2 <- c("", "")
 datetot <- dateN[1]
 datetot2 <- dateN[1]
@@ -191,12 +193,16 @@ for(i in 1 : 4) {
 		print(c(i, j))
 
 		if(i != 4) {
-			sc <- c(sc, scores[[i]][seqs1, j])
+			new <- cbind(scores[[i]][seqs1, j], rep(maxs[i], n))
+			sc <- rbind(sc, new)
 		}else{
 			sc4 <- apply(scores[[i]][seqs1, j, ], 1, 
 				quantile, probs = 0.5, na.rm = T)
-			sc <- c(sc, sc4)
+				
+			new <- cbind(sc4, rep(maxs[i], n))
+			sc <- rbind(sc, new)
 		}
+		
 		others <- cbind(rep(types[i], n), rep(source[j], n))
 		t1 <- rbind(t1, others)
 		datetot <- c(datetot, dateN)
@@ -205,7 +211,7 @@ for(i in 1 : 4) {
 				quantile, probs = 0.75, na.rm = T)
 			bottom <- apply(scores[[i]][seqs1, j, ], 1, 
 				quantile, probs = 0.25, na.rm = T)	
-			others <- cbind(bottom, top)
+			others <- cbind(bottom, top, rep(maxs[i], n))
 			sc2 <- rbind(sc2, others)
 			
 			others <- cbind( rep("Likelihood", n), rep(source[j], n))
@@ -218,13 +224,13 @@ for(i in 1 : 4) {
 	
 }
 t1 <- t1[-1, ]
-sc <- sc[-1]
+sc <- sc[-1, ]
 t2 <- t2[-1, ]
 sc2 <- sc2[-1, ]
 datetot <- datetot[-1]
 datetot2 <- datetot2[-1]
 dat1 <- data.frame(datetot, t1, sc)
-colnames(dat1) <- c("Date", "Type", "Source",  "Conc" )
+colnames(dat1) <- c("Date", "Type", "Source",  "Conc", "Max" )
 dat2 <- data.frame(datetot2, t2, sc2)
 colnames(dat2) <- c("Date", "Type", "Source", "Bottom", "Top" )
 dat1$Date <- as.Date(dat1$Date, origin = "1970-01-01")
@@ -240,38 +246,47 @@ size1 <- 18
 sizeline <- 0.8
 
 
-s1 <- "Residual oil"
-datU <- dat1[which(dat1$Source == s1), ]
-datU <- dat1
-p <- ggplot() + scale_colour_manual(name="",
-                     breaks=c("Likelihood", "1/2MDL", "Exclude", "Reported"),
-                     values = c("#CC6666", "grey20", "grey40", "grey70"))  
-p <- p + geom_ribbon(data = dat2, aes(x = Date, 
-	ymin = Bottom, ymax = Top, group = Type), fill = "red", alpha = 0.2)
-
-p <- p +
-	geom_line(data = datU, aes(x = Date, y = Conc, colour = Type, 
-		group = Type, linetype = Type))  +
-	geom_point(data = datU, aes(x = Date, y = Conc, colour = Type, 
-		group = Type, shape = Type)) +
-	scale_shape_manual(values=c(NA, 1,16, 3), name = "", 
-		 breaks=c("Likelihood", "1/2MDL", "Exclude", "Reported")) + 
-	scale_linetype_manual(values=c(1,2, 3, 1), name="", breaks=c("Likelihood", 
-		"1/2MDL", "Exclude", "Reported"))
-p <- p +    	# scale_colour_grey(name="",
-                     # breaks=c("Likelihood", "1/2MDL", "Exclude", "Reported"),
-                     # start = 0.1, end = 0.6)  +
-      theme(axis.text.y=element_text(size=size1)) +
-      theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5, size = size1)) +
-      scale_x_date(labels = date_format("%m-%Y")) +
-      	theme(panel.background = element_blank()) +
-	 ylab(expression("Concentration (" * mu * 
-		 "g/m"^"3"*")" )) + xlab("") +
-		 theme(legend.text=element_text(size=size1))  
-p <- p + facet_wrap(~Source, scales = "free_y", ncol = 1) + 
-	theme(strip.text.x = element_text(size = size1), axis.title=element_text(size=size1))
-# p
-
+ss <- levels(dat1$Source)
+p1 <- list()
+# for(i in 1 : 4) {
+	
+	# s1 <- ss[i]
+	# datU <- dat1[which(dat1$Source == s1), ]
+	datU <- dat1
+	p <- ggplot() + scale_colour_manual(name="",
+	                     breaks=c("Likelihood", "1/2MDL", "Exclude", "Reported"),
+	                     values = c("#CC6666", "grey20", "grey40", "grey70"))  
+	p <- p + geom_ribbon(data = dat2, aes(x = Date, 
+		ymin = Bottom, ymax = Top, group = Type ), fill = "red", alpha = 0.2)
+		#
+	
+	p <- p +
+		geom_line(data = datU, aes(x = Date, y = Conc,
+			colour = Type, group = Type, linetype = Type))  +
+	
+		geom_point(data = datU, aes(x = Date, y = Conc, 
+			colour = Type, group = Type, shape = Type)) +
+		scale_shape_manual(values=c(NA, 1,16, 3), name = "", 
+			 breaks=c("Likelihood", "1/2MDL", "Exclude", "Reported")) + 
+		scale_linetype_manual(values=c(1,2, 3, 1), name="", breaks=c("Likelihood", 
+			"1/2MDL", "Exclude", "Reported"))
+	p <- p +    	# scale_colour_grey(name="",
+	                     # breaks=c("Likelihood", "1/2MDL", "Exclude", "Reported"),
+	                     # start = 0.1, end = 0.6)  +
+	      theme(axis.text.y=element_text(size=size1)) +
+	      theme(axis.text.x=element_text(angle=90,hjust=1,
+	      vjust=0.5, size = size1)) +
+	      scale_x_date(labels = date_format("%m-%Y")) +
+	      	theme(panel.background = element_blank()) +
+		 ylab(expression("Concentration (" * mu * 
+			 "g/m"^"3"*")" )) + xlab("") +
+			 theme(legend.text=element_text(size=size1))  
+	p <- p + facet_wrap(~Source, scales = "free_y", ncol = 1) 
+	p <- p +	theme(strip.text.x = element_text(size = size1), 
+		axis.title=element_text(size=size1))
+	p
+# }
+# grid.arrange(p1[[1]], p1[[2]], p1[[3]], p1[[4]])
 
 pdf("NYC_mdlsources_pmf.pdf", height = 10, width = 9)
 p
