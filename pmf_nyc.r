@@ -88,11 +88,16 @@ load("dataNYC_pmf.RData")
 cn <- colnames(dataNYC[[1]])[-c(1, 2)]
 
 # #first match no missing between APCA and PMF
-round(cor(pmf.nyc[[1]][[1]], source.conc), 3)
-round(cor(pmf.nyc[[1]][[2]][-1, ], source.prof), 3)
+source.conc <- apca.nyc[[1]][[1]][, c(2, 3, 8, 1)]
+source.prof <- apca.nyc[[1]][[4]][, c(2, 3, 8, 1)]
+c1 <- round(cor(pmf.nyc[[1]][[1]], source.conc), 3)
+c2 <- round(cor(pmf.nyc[[1]][[2]], source.prof), 3)
+prof <- pmf.nyc[[1]][[2]]
+rownames(prof) <- cn
+round(prof[cn2, ], 3)
 
 dista.conc <- dist(t(cbind(pmf.nyc[[1]][[1]], source.conc)))
-dista <- dist(t(cbind(pmf.nyc[[1]][[2]][-1, ], source.prof)))
+dista <- dist(t(cbind(pmf.nyc[[1]][[2]], source.prof)))
 ncol1 <- ncol(pmf.nyc[[1]][[2]])
 ncol2 <- ncol(source.conc)
 dista <- as.matrix(dista)[1 : ncol1, (ncol1 + 1) : (ncol1 + ncol2)]
@@ -103,9 +108,9 @@ dista.conc <- as.matrix(dista.conc)[1 : ncol1, (ncol1 + 1) : (ncol1 + ncol2)]
 #3 is traffic
 #4  is res oil
 
-
-concpmf <- pmf.nyc[[1]][[1]][, c(1, 2, 3, 4)]
-profpmf <- pmf.nyc[[1]][[2]][-1, c(1, 2, 3, 4)]
+sw <- c(4, 8, 1, 2)
+concpmf <- pmf.nyc[[1]][[1]][, sw]
+profpmf <- pmf.nyc[[1]][[2]][, sw]
 rownames(profpmf) <- colnames(dataNYCPMF[[1]])[-1]
 
 source.conc.all <- match.sources(pmf.nyc, concpmf, "scores", typeSA = "PMF")
