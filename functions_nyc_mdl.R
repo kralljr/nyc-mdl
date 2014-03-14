@@ -592,7 +592,7 @@ ci.fun <- function(scores, trim = 0) {
 			
 			#apply PMF
 			pmf.all[[i]] <- outerPMF(dat, ndays = nrow(dat1), 
-				ncons = ncol(dat1), nfact = nf)
+				ncons = ncol(dat1), nfact = nf, total = T)
 	
 			save(pmf.all, file = fp)	
 			}
@@ -607,7 +607,7 @@ ci.fun <- function(scores, trim = 0) {
 				dat <- list(data.all[[4]][[j]], unc1)
 				dat1 <- dat[[1]]
 				pmf.all[[4]][[j]] <- outerPMF(dat, ndays = nrow(dat1), 
-					ncons = ncol(dat1), nfact = nf)
+					ncons = ncol(dat1), nfact = nf, total = T)
 				save(pmf.all, file = fp)	
 				}
 			
