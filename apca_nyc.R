@@ -65,6 +65,7 @@ datmcmc <- runGIBBS(dat[, -c(1, 2)], mdls[, -1], niter = 50000,
 dataNYC[[4]] <- datmcmc
 names(dataNYC)[4] <- "gibbs" 
 
+# save(dataNYC, file = "dataNYC.RData")
 
 
 # #################################
@@ -102,6 +103,7 @@ for(i in 1 : 3) {
 }
 set.seed(99466)
 apca.nyc <- apca.all(dataNYCnodate, tot = T)
+# save(apca.nyc, file = "apca_nyc.RData")
 
 
 #try without total
@@ -209,8 +211,6 @@ xtable(make.table(scores, trim = 0.1))
 #################################
 #################################
 #########
-#Plot of residual oil and traffic
-
 
 ###Plot for paper
 
