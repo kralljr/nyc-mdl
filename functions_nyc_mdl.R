@@ -229,6 +229,7 @@ make.list.pmf <- function(list, type, cn) {
 		}
 		out[[i]] <- list[[i]][[index]]
 		if(index == 2) {
+			out[[i]] <- out[[i]][-1, ]
 			rownames(out[[i]]) <- cn1
 		}
 		
@@ -239,6 +240,7 @@ make.list.pmf <- function(list, type, cn) {
 	for(j in 1 : length(list[[4]])) {
 		out[[4]][[j]] <- list[[4]][[j]][[index]]
 		if(index == 2) {
+			out[[4]][[j]] <- out[[4]][[j]][-1, ]
 			rownames(out[[4]][[j]]) <- cn
 		}
 	}
@@ -312,7 +314,7 @@ match.sources <- function(saresults, report, type, ncol1 = NULL,
 	matchmat <- matrix(nrow = nreps + 3, ncol = ncol(report))
 	
 	for(i in 2 : 3) {
-
+		print(i)
 		ncol1 <- ncol(scores[[i]])
 		mtch <- find.top.mtch(report, scores[[i]][, 1 : ncol1], 
 			type = type)
@@ -321,6 +323,7 @@ match.sources <- function(saresults, report, type, ncol1 = NULL,
 	
 	curr <- 4
 	for(j in 1 : nreps) {
+		print(j)
 		if(j %in% holds) {
 			holds1 <- j
 		}else{holds1 <- 0}
