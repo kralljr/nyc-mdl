@@ -565,3 +565,55 @@ ci.fun <- function(scores, trim = 0) {
 
 
 
+
+
+#function to apply pmf to all 
+	pmf.all <- function(data.all, unc, uncsn, nf, fp) {
+	
+		pmf.all <- list()
+		
+		#for reported, 1/2mdl, snrat
+		for(i in 1 : 3) {
+			print(i)
+			
+			#set uncertainty
+			if(i == 3){ 
+				#fix un
+				unc1 <- uncsn
+			}else{ 
+				unc1 <- unc
+				}
+				
+			#inflate uncertainty for pm2.5	
+			unc1[, 1] <- unc1[, 1] * 3
+			dat <- list(data.all[[i]], unc1)
+			dat1 <- dat[[1]]
+			
+			#apply PMF
+			pmf.all[[i]] <- outerPMF(dat, ndays = nrow(dat1), 
+				ncons = ncol(dat1), nfact = nf)
+	
+			save(pmf.all, file = fp)	
+			}
+			
+	
+			pmf.all[[4]] <- list()
+			unc1 <- unc
+			unc1[, 1] <- unc1[, 1] * 3
+	
+			for(j in 1 : length(data.all[[4]])) {
+	
+				dat <- list(data.all[[4]][[j]], unc1)
+				dat1 <- dat[[1]]
+				pmf.all[[4]][[j]] <- outerPMF(dat, ndays = nrow(dat1), 
+					ncons = ncol(dat1), nfact = nf)
+				save(pmf.all, file = fp)	
+				}
+			
+			
+		
+		
+		pmf.all
+	
+	}
+
