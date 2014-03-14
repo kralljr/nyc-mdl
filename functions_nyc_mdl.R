@@ -229,7 +229,6 @@ make.list.pmf <- function(list, type, cn) {
 		}
 		out[[i]] <- list[[i]][[index]]
 		if(index == 2) {
-			out[[i]] <- out[[i]][-1, ]
 			rownames(out[[i]]) <- cn1
 		}
 		
@@ -240,7 +239,6 @@ make.list.pmf <- function(list, type, cn) {
 	for(j in 1 : length(list[[4]])) {
 		out[[4]][[j]] <- list[[4]][[j]][[index]]
 		if(index == 2) {
-			out[[4]][[j]] <- out[[4]][[j]][-1, ]
 			rownames(out[[4]][[j]]) <- cn
 		}
 	}
