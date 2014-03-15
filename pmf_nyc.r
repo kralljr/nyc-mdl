@@ -185,7 +185,7 @@ maxs <- c(10, 10, 10, 30)
 t2 <- c("", "")
 datetot <- dateN[1]
 datetot2 <- dateN[1]
-types <- c("Reported", "1/2MDL", "Exclude", "Likelihood")
+types <- c("Reported", "1/2MDL", "Exclude/downweight", "Likelihood")
 source <- c("Soil", "Sec. Sulfate", "Traffic", "Residual oil")
 #for each source
 for(i in 1 : 4) {
@@ -239,7 +239,7 @@ dat1$Date <- as.Date(dat1$Date, origin = "1970-01-01")
 lev1 <- c("Traffic", "Residual oil", "Soil", "Sec. Sulfate")
 dat1$Source <- factor(dat1$Source, levels = lev1)
 dat2$Source <- factor(dat2$Source, levels = lev1)
-dat1$Type <- factor(dat1$Type, levels = c("Likelihood", "1/2MDL", "Exclude", "Reported"))
+dat1$Type <- factor(dat1$Type, levels = c("Likelihood", "1/2MDL", "Exclude/downweight", "Reported"))
 
 pd <- position_dodge(.4)
 size1 <- 18
@@ -254,7 +254,7 @@ p1 <- list()
 	# datU <- dat1[which(dat1$Source == s1), ]
 	datU <- dat1
 	p <- ggplot() + scale_colour_manual(name="",
-	                     breaks=c("Likelihood", "1/2MDL", "Exclude", "Reported"),
+	                     breaks=c("Likelihood", "1/2MDL", "Exclude/downweight", "Reported"),
 	                     values = c("#CC6666", "grey20", "grey40", "grey70"))  
 	p <- p + geom_ribbon(data = dat2, aes(x = Date, 
 		ymin = Bottom, ymax = Top, group = Type ), fill = "red", alpha = 0.2)
@@ -267,9 +267,9 @@ p1 <- list()
 		geom_point(data = datU, aes(x = Date, y = Conc, 
 			colour = Type, group = Type, shape = Type)) +
 		scale_shape_manual(values=c(NA, 1,16, 3), name = "", 
-			 breaks=c("Likelihood", "1/2MDL", "Exclude", "Reported")) + 
+			 breaks=c("Likelihood", "1/2MDL", "Exclude/downweight", "Reported")) + 
 		scale_linetype_manual(values=c(1,2, 3, 1), name="", breaks=c("Likelihood", 
-			"1/2MDL", "Exclude", "Reported"))
+			"1/2MDL", "Exclude/downweight", "Reported"))
 	p <- p +    	# scale_colour_grey(name="",
 	                     # breaks=c("Likelihood", "1/2MDL", "Exclude", "Reported"),
 	                     # start = 0.1, end = 0.6)  +
