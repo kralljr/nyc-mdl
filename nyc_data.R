@@ -98,6 +98,8 @@ colnames(dat)[1:2] <- c("Date", "PM25")
 
 
 
+
+
 write.csv(dat, file = "nycdat.csv", row.names = F)
 
 
@@ -171,7 +173,22 @@ write.csv(mdls, file = "mdls.csv", row.names = F)
 
 
 
+#####
+# get avg %mdl for each source
+bdls <- 1 * (sweep(dat[, -1], 2, mdlmax, "<"))
+pbdls <- round(apply(bdls, 2, mean), 2)
 
+sour1 <- list()
+sour1[[1]] <- pbdls[c("aluminum", "calcium", "iron", "silicon", "titanium")]
+sour1[[2]]  <- pbdls[c("sulfur", "ammonium_ion")]
+sour1[[3]]  <- pbdls[c("OC", "elemental_carbon", "potassium")]
+sour1[[4]]  <- pbdls[c("nickel", "vanadium", "nitrate",	
+	"chlorine", "lead", "zinc")]
+	
+meanmed <- function(x) {median(x, na.rm = T)}	
+x <- sapply(sour1, meanmed)
+names(x) <- c("soil", "sec sulf", "traff", "resoil")
+x
 
 
 
