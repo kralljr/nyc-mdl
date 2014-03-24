@@ -236,10 +236,11 @@ colnames(dat2) <- c("Date", "Type", "Source", "Bottom", "Top" )
 dat1$Date <- as.Date(dat1$Date, origin = "1970-01-01")
 
 
-lev1 <- c("Traffic", "Residual oil", "Soil", "Sec. Sulfate")
+lev1 <- c("Soil", "Sec. Sulfate", "Traffic", "Residual oil")
 dat1$Source <- factor(dat1$Source, levels = lev1)
 dat2$Source <- factor(dat2$Source, levels = lev1)
 dat1$Type <- factor(dat1$Type, levels = c("Likelihood", "1/2MDL", "Exclude/downweight", "Reported"))
+
 
 pd <- position_dodge(.4)
 size1 <- 18
@@ -288,6 +289,8 @@ p1 <- list()
 # }
 # grid.arrange(p1[[1]], p1[[2]], p1[[3]], p1[[4]])
 
+
+setwd("/Users/jennakrall/Dropbox/MDL_sourceapp/MDL_paper_20feb13/")
 pdf("NYC_mdlsources_pmf.pdf", height = 10, width = 9)
 p
 graphics.off()
